@@ -1,18 +1,20 @@
 from functions.data_loader import YahooDataLoader
 from functions.group_constraints import GroupConstraints
+from functions.portfolio_metrics import PortfolioMetrics
 import pulp
 import pandas as pd
 import os
 
 DOWNLOAD_DATA = False
-TOTAL_BUDGET = 1000.0
+TOTAL_BUDGET = 100000.0
 DATA_DIR = "data"
+TICKER_FILE = os.path.join(DATA_DIR, "tickers_default.txt")
 
 
 if __name__ == "__main__":
     
     if DOWNLOAD_DATA:
-        loader = YahooDataLoader()
+        loader = YahooDataLoader(ticker_file=TICKER_FILE)
         train, test = loader.load_or_download(
             train_start="2022-01-01",
             train_end="2023-01-01",
@@ -53,16 +55,22 @@ if __name__ == "__main__":
     # -----------------------------
     # 4. Budget constraints
     # -----------------------------
-    model += pulp.lpSum(w[i] for i in valid_tickers) <= 1
-    model += pulp.lpSum(w[i] for i in valid_tickers) >= 0.2
+    budget_upper = pulp.lpSum(w[i] for i in valid_tickers) <= 1
+    budget_lower = pulp.lpSum(w[i] for i in valid_tickers) >= 0.2
+
+    model += budget_upper
+    model += budget_lower
 
     # -----------------------------
     # 5. Group constraints
     # -----------------------------
     gc = GroupConstraints(valid_tickers)
     groups, limits = gc.get_valid_groups(valid_tickers)
+    group_constraints = {}
     for g, assets in groups.items():
-        model += pulp.lpSum(w[i] for i in assets) <= limits[g]
+        c = pulp.lpSum(w[i] for i in assets) <= limits[g]
+        model += c
+        group_constraints[g] = c
 
     # -----------------------------
     # Cardinality + linking
@@ -85,6 +93,12 @@ if __name__ == "__main__":
     status = model.solve(pulp.PULP_CBC_CMD(msg=False))
     print("\nSolver status:", pulp.LpStatus[status])
 
+    print("\nObjective value:", pulp.value(model.objective))
+    print("Budget upper dual:", budget_upper.pi)
+    print("Budget lower dual:", budget_lower.pi)
+    for g, c in group_constraints.items():
+        print(f"{g}: {c.pi}")
+
     # -----------------------------
     # 7. Output
     # -----------------------------
@@ -92,6 +106,9 @@ if __name__ == "__main__":
     print("\nSelected portfolio:")
     for k, v in sorted(weights.items(), key=lambda x: -x[1]):
         print(f"{k}: {v:.4f}")
+
+    metrics = PortfolioMetrics(weights, train, test)
+    metrics.print_report()
 
 
 
