@@ -64,13 +64,18 @@ if __name__ == "__main__":
     # -----------------------------
     # 5. Group constraints
     # -----------------------------
-    gc = GroupConstraints(valid_tickers)
+    gc = GroupConstraints("data/group_constraints.csv")
     groups, limits = gc.get_valid_groups(valid_tickers)
     group_constraints = {}
     for g, assets in groups.items():
-        c = pulp.lpSum(w[i] for i in assets) <= limits[g]
+        c = pulp.lpSum(w[i] for i in assets) <= limits[g]["max"]
         model += c
-        group_constraints[g] = c
+        name = f"Group {g} max"
+        group_constraints[name] = c
+        c = pulp.lpSum(w[i] for i in assets) >= limits[g]["min"]
+        model += c
+        name = f"Group {g} min"
+        group_constraints[name] = c
 
     # -----------------------------
     # Cardinality + linking
@@ -80,9 +85,17 @@ if __name__ == "__main__":
     MIN_WEIGHT = 0.01
 
     for i in valid_tickers:
-        model += w[i] <= x[i]
+        # model += w[i] <= x[i]
         model += w[i] >= MIN_WEIGHT * x[i]
 
+    MAX_WEIGHT = 0.05
+    for i in valid_tickers:
+        model += w[i] <= MAX_WEIGHT
+
+
+    RISK_LIMIT = 0.02
+
+    model += pulp.lpSum(var[i] * w[i] for i in valid_tickers) <= RISK_LIMIT
     # cardinality
     model += pulp.lpSum(x[i] for i in valid_tickers) >= 20
     model += pulp.lpSum(x[i] for i in valid_tickers) <= 40

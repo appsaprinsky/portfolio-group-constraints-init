@@ -1,0 +1,11 @@
+group,tickers,min,max
+big_tech,AAPL|MSFT|GOOG|AMZN|META|NVDA,0.0,0.25
+ai_cloud,MSFT|GOOG|AMZN|NVDA|CRM|NOW,0.0,0.20
+semiconductors,NVDA|AMD|INTC|QCOM|TXN|AVGO|MU,0.0,0.20
+banks,JPM|BAC|WFC|C|GS|MS,0.0,0.40
+payments,V|MA|PYPL|AXP|COF,0.0,0.40
+energy_total,XOM|CVX|COP|SLB|BP,0.0,0.40
+consumer_staples,KO|PEP|PG|WMT|COST,0.0,0.40
+china,BABA|JD|PDD,0.0,0.40
+high_growth,TSLA|NVDA|SNOW|DDOG|SHOP|ZM|DOCU,0.0,0.40
+individual,MRK,0.0,0.40
