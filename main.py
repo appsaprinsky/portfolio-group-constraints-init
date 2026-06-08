@@ -50,7 +50,15 @@ if __name__ == "__main__":
     model = pulp.LpProblem("Portfolio", pulp.LpMaximize)
     w = pulp.LpVariable.dicts("w", valid_tickers, lowBound=0, upBound=1)
     # objective (Sharpe-like)
-    model += pulp.lpSum((mu[i] / (var[i] + 1e-6)) * w[i] for i in valid_tickers)
+    # model += pulp.lpSum((mu[i] / (var[i] + 1e-6)) * w[i] for i in valid_tickers)
+
+    # objective (Sharpe-like)
+    LAMBDA = 10  # tune this
+
+    model += pulp.lpSum(
+        mu[i] * w[i] - LAMBDA * var[i] * w[i]
+        for i in valid_tickers
+    )
 
     # -----------------------------
     # 4. Budget constraints
